@@ -4,11 +4,14 @@ FROM nginx:alpine
 # Borra el contenido por defecto de Nginx
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copia la configuración de Nginx (¡ESTA LÍNEA FALTABA!)
+# Copia la configuración de Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copia nuestro único archivo index.html
+# Copia el index.html
 COPY index.html /usr/share/nginx/html/
+
+# ¡LA LÍNEA MÁGICA! Copia la carpeta assets entera (imágenes y videos)
+COPY assets /usr/share/nginx/html/assets
 
 # Expone el puerto 80
 EXPOSE 80
