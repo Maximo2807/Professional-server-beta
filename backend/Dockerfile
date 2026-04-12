@@ -10,8 +10,11 @@ WORKDIR /usr/src/app
 # Copia solo el archivo package.json para aprovechar el caché de Docker.
 COPY package*.json ./
 
-# Instala las dependencias.
-RUN npm install
+# Instala las dependencias ignorando quejas de versiones
+RUN npm install --legacy-peer-deps
+
+# Instalamos explícitamente las librerías de la nube para evitar cualquier falta
+RUN npm install archiver googleapis --legacy-peer-deps
 
 # Copia el resto de los archivos del proyecto.
 COPY . .

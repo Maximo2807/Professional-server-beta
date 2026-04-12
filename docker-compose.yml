@@ -1,9 +1,11 @@
+version: '3.8'
+
 services:
   frontend:
     build: ./frontend
     container_name: minecraft-panel-frontend
     ports:
-      - "8081:80" # <-- CAMBIO REALIZADO AQUÍ
+      - "8081:80"
     networks:
       - minecraft-net
     depends_on:
@@ -18,37 +20,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./backend-data:/usr/src/app/data
       - minecraft-data:/minecraft-server-data 
-    environment:
-      - MINECRAFT_CONTAINER_NAME=ProyectoMinecraft
-      - MINECRAFT_RCON_HOST=minecraft-server
-      - MINECRAFT_RCON_PORT=25575
-      - MINECRAFT_RCON_PASSWORD=6dd8390a60a7e0f7fc38213a
-    networks:
-      - minecraft-net
-    depends_on:
-      - minecraft-server
-
-  minecraft-server:
-    image: itzg/minecraft-server:stable-java21-jdk
-    container_name: ProyectoMinecraft
-    ports:
-      - "25565:25565"
-      - "25575:25575"
-    environment:
-      EULA: "TRUE"
-      TYPE: "FORGE"
-      VERSION: "1.20.1"
-      FORGE_VERSION: "47.4.3"
-      RCON_PORT: "25575"
-      RCON_PASSWORD: "6dd8390a60a7e0f7fc38213a"
-      MEMORY: "4G"
-    volumes:
-      - minecraft-data:/data
     networks:
       - minecraft-net
 
 volumes:
   minecraft-data:
+  backend-data:
 
 networks:
   minecraft-net:

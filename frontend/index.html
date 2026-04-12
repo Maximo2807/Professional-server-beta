@@ -12,11 +12,9 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        /* overflow-y: scroll permanente para evitar saltos de pantalla */
         body { background: #0a0a0a; color: white; overflow-x: hidden; overflow-y: scroll; min-height: 100vh; }
         .hidden { display: none !important; }
 
-        /* --- ESTILOS LOGIN DIVIDIDO --- */
         .contenedor-principal { display: flex; height: 100vh; width: 100%; }
         .mitad-video { width: 55%; position: relative; background: #000; overflow: hidden; }
         .video-fondo { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; position: absolute; top: 0; left: 0; }
@@ -25,7 +23,6 @@
         .mitad-login { width: 45%; display: flex; justify-content: center; align-items: center; background: #0a0a0a; padding: 40px; z-index: 2; }
         .caja-login { width: 100%; max-width: 420px; z-index: 2; display: flex; flex-direction: column; align-items: center; }
         
-        .brand-logo { width: 100px; height: auto; margin-bottom: 20px; }
         .titulo-container { text-align: center; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center;}
         .titulo-pro { font-family: 'Press Start 2P', cursive; font-size: 24px; color: #4CAF50; display: block; margin-bottom: 8px;}
         .titulo-servers { font-family: 'Press Start 2P', cursive; font-size: 24px; color: white; display: block;}
@@ -52,7 +49,6 @@
         .enlace-interactivo { color: #4CAF50; cursor: pointer; font-weight: 600; text-decoration: none; }
         .enlace-interactivo:hover { text-decoration: underline; }
 
-        /* --- ESTILOS DASHBOARD CON TU FONDO --- */
         .dashboard-body { 
             position: relative;
             width: 100%; 
@@ -78,7 +74,6 @@
             z-index: 10;
         }
 
-        /* --- ESTILOS GRID TIPO AMD (4 PANELES) --- */
         .amd-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -128,7 +123,6 @@
             width: 100%;
         }
 
-        /* BOTONES DE ENERGÍA */
         .btn-power { padding: 12px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; color: white; border: none; display: flex; align-items: center; gap: 8px; justify-content: center; width: 100%; font-size: 13px;}
         .btn-power:disabled { opacity: 0.3; cursor: not-allowed; }
         .btn-start { background-color: #4CAF50; }
@@ -155,7 +149,6 @@
         .file-tree-item { cursor: pointer; padding: 8px; border-radius: 4px; display: flex; align-items: center; gap: 8px; transition: 0.2s;}
         .file-tree-item:hover { background-color: #222; }
 
-        /* --- ESTILOS PARA MODS, COMPARTIDOS Y AJUSTES --- */
         .mod-pills-tab { display: flex; gap: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; flex-wrap: wrap;}
         .mod-pill { padding: 8px 16px; border-radius: 20px; background: #222; border: 1px solid #444; color: #aaa; font-size: 12px; cursor: pointer; transition: 0.2s; text-transform: uppercase;}
         .mod-pill.active { background: #4CAF50; color: white; border-color: #4CAF50; font-weight: bold; }
@@ -190,7 +183,13 @@
         <div class="mitad-login">
             <div class="caja-login">
                 <div class="titulo-container">
-                    <img src="./assets/img/logo-minecraft.ico" class="brand-logo" alt="Logo" onerror="this.style.display='none'">
+                    <div class="flex items-center justify-center gap-4 mb-5">
+                        <img src="./assets/img/favicon.ico" alt="Tu Logo" class="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(76,175,80,0.5)] transition-transform hover:scale-110" onerror="this.src='./assets/img/logo-minecraft.ico'">
+                        <i data-feather="x" class="text-gray-600 w-4 h-4"></i>
+                        <img src="./assets/img/logo-minecraft.ico" alt="Minecraft" class="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] transition-transform hover:scale-110">
+                        <i data-feather="x" class="text-gray-600 w-4 h-4"></i>
+                        <img src="./assets/img/modrinth.ico" alt="Modrinth" class="w-10 h-10 rounded-xl object-contain drop-shadow-[0_0_12px_rgba(27,217,106,0.5)] transition-transform hover:scale-110" onerror="this.src='./assets/img/logo-minecraft.ico'">
+                    </div>
                     <span class="titulo-pro">Professional</span>
                     <span class="titulo-servers">Servers</span>
                 </div>
@@ -275,7 +274,8 @@
                     </form>
                 </div>
             </div>
-            <p style="position: absolute; bottom: 20px; right: 20px; font-size: 10px; color: #333;">PROFESSIONAL SERVERS V2.0 | @MAXPRO</p>
+            
+            <p style="position: absolute; bottom: 20px; right: 20px; font-size: 10px; color: #333;">PROFESSIONAL SERVERS V2.5 BETA | @MAXPRO</p>
         </div>
     </div>
 
@@ -287,7 +287,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, OAuthProvider, signInWithPopup, updateProfile, onAuthStateChanged, signOut, linkWithPopup, unlink } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
-        // TUS CREDENCIALES DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAg-wvhB7iaHOF5UOSsOOOz6le1ZutVmMM",
             authDomain: "proffesional-server.firebaseapp.com",
@@ -306,7 +305,9 @@
         const providerMicrosoft = new OAuthProvider('microsoft.com');
 
         document.addEventListener('DOMContentLoaded', () => {
-            const API_URL = window.location.origin;
+            feather.replace();
+
+            const API_URL = "http://localhost:3000"; 
             const authContainer = document.getElementById('auth-container');
             const dashboard = document.getElementById('main-dashboard');
 
@@ -321,9 +322,24 @@
                 document.getElementById('login-box').classList.remove('hidden');
             });
 
-            onAuthStateChanged(auth, (user) => {
+            onAuthStateChanged(auth, async (user) => {
                 if (user) {
-                    entrarAlPanel();
+                    // Preguntamos al backend si este usuario ya tiene un proyecto
+                    try {
+                        const res = await fetch(`${API_URL}/api/project/check?uid=${user.uid}`);
+                        if(res.ok) {
+                            const data = await res.json();
+                            if (data.exists) {
+                                entrarAlPanel(); // Si tiene, entra normal
+                            } else {
+                                window.location.href = 'create.html'; // Si NO tiene, lo mandamos a crear
+                            }
+                        } else {
+                            entrarAlPanel(); // Si el backend no responde, entra por las dudas
+                        }
+                    } catch (e) {
+                        entrarAlPanel(); // Prevención de errores
+                    }
                 } else {
                     authContainer.classList.remove('hidden');
                     dashboard.classList.add('hidden');
@@ -420,6 +436,10 @@
                             <a data-panel="compartidos-panel"><i data-feather="share-2"></i><span class="title">Compartidos</span></a>
                             <a id="logout-btn"><i data-feather="log-out"></i><span class="title">Salir</span></a>
                         </nav>
+                    </div>
+                    
+                    <div id="support-chat-btn" class="fixed bottom-24 right-8 bg-indigo-600 p-4 rounded-full shadow-2xl cursor-pointer hover:bg-indigo-500 transition-colors z-[2000] border-2 border-indigo-400" title="Soporte (Próximamente)" onclick="alert('Chat de soporte en desarrollo...')">
+                        <i data-feather="message-square" class="text-white w-6 h-6"></i>
                     </div>`;
                 
                 feather.replace();
@@ -453,6 +473,24 @@
                 if (id === 'home-panel') {
                     panel.innerHTML = `
                         <div class="amd-grid">
+                            <div class="amd-panel" style="grid-column: span 2; background: rgba(30, 20, 60, 0.8); border-color: #6366f1;">
+                                <div class="amd-panel-header border-b border-[#6366f1] pb-3">
+                                    <div class="amd-panel-title text-indigo-400"><i data-feather="globe" class="w-5 h-5"></i> IP de Conexión (Generada Automáticamente)</div>
+                                    <div class="text-xs bg-indigo-600 px-3 py-1 rounded-full text-white font-bold animate-pulse">BETA PÚBLICA</div>
+                                </div>
+                                <div class="flex justify-between items-center mt-2">
+                                    <div>
+                                        <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Comparte esta IP para que entren tus amigos</p>
+                                        <div class="amd-panel-value text-white flex items-center gap-4 text-3xl">
+                                            <span id="server-public-ip">Obteniendo túnel...</span>
+                                            <button onclick="navigator.clipboard.writeText(document.getElementById('server-public-ip').innerText); alert('¡IP Copiada exitosamente!')" class="bg-[#111] hover:bg-[#222] border border-[#333] p-2 rounded-lg transition-colors cursor-pointer" title="Copiar IP">
+                                                <i data-feather="copy" class="w-5 h-5 text-indigo-400"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="amd-panel">
                                 <div class="amd-panel-header">
                                     <div class="amd-panel-title"><i data-feather="power" class="text-gray-400 w-4 h-4"></i>Gestión de Energía</div>
@@ -475,7 +513,7 @@
                             <div class="amd-panel">
                                 <div class="amd-panel-header">
                                     <div class="amd-panel-title"><i data-feather="server" class="text-green-500 w-4 h-4"></i>Uso de Memoria (RAM)</div>
-                                    <div id="stat-ram-value" class="amd-panel-value text-green-500">0 MB</div>
+                                    <div id="stat-ram-value" class="amd-panel-value text-green-500">0.00 GB / 8.00 GB</div>
                                 </div>
                                 <div class="chart-container"><canvas id="ramChart"></canvas></div>
                             </div>
@@ -489,12 +527,12 @@
                             <div class="amd-panel">
                                 <div class="amd-panel-header">
                                     <div class="amd-panel-title"><i data-feather="hard-drive" class="text-purple-500 w-4 h-4"></i>Almacenamiento (Disco)</div>
-                                    <div id="stat-disk-value" class="amd-panel-value text-purple-500">0 GB</div>
+                                    <div id="stat-disk-header" class="amd-panel-value text-purple-500" style="font-size: 24px;">0% USADO</div>
                                 </div>
                                 <div class="flex-grow flex items-center justify-center">
                                     <div class="text-center w-full">
-                                        <div class="w-full bg-[#222] rounded-full h-4 mb-2"><div class="bg-purple-500 h-4 rounded-full" style="width: 45%"></div></div>
-                                        <p class="text-xs text-gray-500 uppercase tracking-widest mt-4">Espacio asignado en Docker /data</p>
+                                        <div class="w-full bg-[#222] rounded-full h-4 mb-2"><div id="stat-disk-bar" class="bg-purple-500 h-4 rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                                        <p class="text-xs text-gray-500 uppercase tracking-widest mt-4"><span id="stat-disk-value">0%</span> DE 100% USADO</p>
                                     </div>
                                 </div>
                             </div>
@@ -504,6 +542,18 @@
                     initCharts();
                     checkStatus();
                     statusInterval = setInterval(checkStatus, 3000);
+                    
+                    // Script que pide tu IP Pública y le agrega el puerto de Minecraft
+                    fetch('https://api.ipify.org?format=json')
+                        .then(res => res.json())
+                        .then(data => {
+                            const ipEl = document.getElementById('server-public-ip');
+                            if(ipEl) ipEl.innerText = data.ip + ':25565';
+                        })
+                        .catch(() => {
+                            const ipEl = document.getElementById('server-public-ip');
+                            if(ipEl) ipEl.innerText = 'localhost:25565';
+                        });
                 }
                 
                 if (id === 'console-panel') {
@@ -541,9 +591,8 @@
                             <div class="mod-pills-tab flex-wrap">
                                 <div class="mod-pill active" data-type="mod">Mods</div>
                                 <div class="mod-pill" data-type="modpack">Modpacks</div>
-                                <div class="mod-pill" data-type="resourcepack">Resource Packs</div>
-                                <div class="mod-pill" data-type="datapack">Datapacks</div>
-                                <div class="mod-pill" data-type="shader">Shaders</div>
+                                <div class="mod-pill" data-type="plugin">Bukkit Plugins</div>
+                                <div class="mod-pill" data-type="datapack">Data Packs</div>
                             </div>
                             <form id="mod-search-form" class="flex gap-2 mb-6">
                                 <input type="text" id="mod-search-input" class="search-mod-input" placeholder="Buscar por nombre...">
@@ -574,7 +623,12 @@
                         list.innerHTML = '<p class="text-green-500 text-sm">Buscando en internet...</p>';
                         
                         try {
-                            const res = await fetch(`https://api.modrinth.com/v2/search?query=${query}&facets=[["project_type:${currentModType}"]]`);
+                            let facets = `[["project_type:${currentModType}"]]`;
+                            if (currentModType === 'plugin' || currentModType === 'datapack') {
+                                facets = `[["project_type:mod"],["categories:${currentModType === 'plugin' ? 'bukkit' : currentModType}"]]`;
+                            }
+
+                            const res = await fetch(`https://api.modrinth.com/v2/search?query=${query}&facets=${facets}`);
                             const data = await res.json();
                             
                             if(data.hits && data.hits.length > 0) {
@@ -622,22 +676,19 @@
 
                             <div class="flex justify-between items-center mb-4 border-b border-[#222] pb-4">
                                 <h4 class="text-sm uppercase text-gray-400 font-bold">Tus Respaldos</h4>
-                                <div class="flex items-center gap-4">
-                                    <label class="text-xs text-gray-400 flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" id="auto-backup-toggle" class="rounded bg-[#222] border-[#444] text-green-500">
-                                        Auto-copia al detener
-                                    </label>
-                                    <button onclick="window.createMockBackup()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-xs font-bold text-white uppercase transition-colors shadow-lg">Crear Copia Ahora</button>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="window.createBackup('gdrive')" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-xs font-bold text-white uppercase transition-colors shadow-lg">Respaldar GDrive</button>
+                                    <button onclick="window.createBackup('onedrive')" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-xs font-bold text-white uppercase transition-colors shadow-lg">Respaldar OneDrive</button>
                                 </div>
                             </div>
                             
-                            <div id="backup-list" class="flex flex-col gap-2">
-                                <div class="text-center text-gray-600 text-sm py-4">No hay copias de seguridad creadas aún.</div>
-                            </div>
+                            <div id="backup-list" class="flex flex-col gap-4">
+                                </div>
                         </div>`;
                     
                     feather.replace();
                     updateProviderUI(); 
+                    loadSavedBackups(); // Carga los backups viejos!
                 }
 
                 if (id === 'settings-panel') {
@@ -696,80 +747,13 @@
                     panel.innerHTML = `
                         <div class="content-panel">
                             <h3 class="text-xl mb-6 font-bold text-green-500">Gestión de Acceso Compartido</h3>
-                            
                             <div class="flex gap-2 mb-8 bg-[#111] p-4 rounded-xl border border-[#333]">
                                 <input type="text" id="share-user-input" class="search-mod-input flex-1" placeholder="Nombre de usuario o Email del Profesional Server...">
                                 <button onclick="alert('Usuario invitado con éxito.')" class="bg-indigo-600 hover:bg-indigo-700 transition-colors px-6 rounded-lg font-bold text-white uppercase text-xs tracking-wider">Invitar</button>
                             </div>
-                            
                             <h4 class="text-sm uppercase text-gray-400 mb-3 font-bold">Lista de Profesionales con Acceso</h4>
-                            
                             <div class="flex flex-col gap-6" id="shared-users-container">
-                                <div class="bg-[#111] border border-[#333] rounded-xl overflow-hidden p-6 shared-user-card">
-                                    <div class="flex justify-between items-center mb-4 border-b border-[#222] pb-3">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center text-white font-bold">UP</div>
-                                            <p class="font-bold text-lg text-green-500">Invitado de prueba (@user_pro)</p>
-                                        </div>
-                                        <button onclick="this.closest('.shared-user-card').remove()" class="text-xs text-red-500 uppercase tracking-wider hover:text-red-400 font-bold border border-red-500 px-3 py-1 rounded hover:bg-red-900/30 transition-colors">Eliminar Acceso</button>
-                                    </div>
-                                    <div class="overflow-x-auto">
-                                        <table class="permissions-table w-full">
-                                            <thead>
-                                                <tr>
-                                                    <th class="text-left">Módulo / Categoría</th>
-                                                    <th class="text-center">Iniciar</th>
-                                                    <th class="text-center">Reiniciar</th>
-                                                    <th class="text-center">Detener</th>
-                                                    <th class="text-center text-red-400">ADMIN</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr><td class="text-left">Estado / Rendimiento</td><td class="text-center"><input type="checkbox" class="perm-check" checked></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Consola</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Jugadores / Staff</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Archivos</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Mods & APIS</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Copias Nube</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Ajustes / Docker</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Compartidos</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div class="bg-[#111] border border-[#333] rounded-xl overflow-hidden p-6 shared-user-card">
-                                    <div class="flex justify-between items-center mb-4 border-b border-[#222] pb-3">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center text-white font-bold">DA</div>
-                                            <p class="font-bold text-lg text-blue-400">Dev Auxiliar (@dev_aux)</p>
-                                        </div>
-                                        <button onclick="this.closest('.shared-user-card').remove()" class="text-xs text-red-500 uppercase tracking-wider hover:text-red-400 font-bold border border-red-500 px-3 py-1 rounded hover:bg-red-900/30 transition-colors">Eliminar Acceso</button>
-                                    </div>
-                                    <div class="overflow-x-auto">
-                                        <table class="permissions-table w-full">
-                                            <thead>
-                                                <tr>
-                                                    <th class="text-left">Módulo / Categoría</th>
-                                                    <th class="text-center">Iniciar</th>
-                                                    <th class="text-center">Reiniciar</th>
-                                                    <th class="text-center">Detener</th>
-                                                    <th class="text-center text-red-400">ADMIN</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr><td class="text-left">Estado / Rendimiento</td><td class="text-center"><input type="checkbox" class="perm-check" checked></td><td class="text-center"><input type="checkbox" class="perm-check" checked></td><td class="text-center"><input type="checkbox" class="perm-check" checked></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Consola</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check" checked></td></tr>
-                                                <tr><td class="text-left">Jugadores / Staff</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check" checked></td></tr>
-                                                <tr><td class="text-left">Archivos</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Mods & APIS</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Copias Nube</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Ajustes / Docker</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                                <tr><td class="text-left">Compartidos</td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td><td class="text-center"><input type="checkbox" class="perm-check"></td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                <div class="text-center text-gray-600 text-sm py-4 w-full">No hay usuarios invitados aún.</div>
                             </div>
                         </div>`;
                 }
@@ -778,32 +762,17 @@
             async function loadMinecraftVersions() {
                 const select = document.getElementById('mc-version-select');
                 if (!select) return;
-                
-                if (cachedVersionsHTML) {
-                    select.innerHTML = cachedVersionsHTML;
-                    return;
-                }
-                
+                if (cachedVersionsHTML) { select.innerHTML = cachedVersionsHTML; return; }
                 try {
                     const res = await fetch('https://launchermeta.mojang.com/mc/game/version_manifest.json');
                     const data = await res.json();
-                    
-                    let html = '<optgroup label="Bedrock Edition"><option value="Bedrock-Latest">Bedrock Última Versión</option><option value="Bedrock-Preview">Bedrock Preview</option></optgroup>';
-                    html += '<optgroup label="Java Edition (Releases y Snapshots)">';
-                    
-                    data.versions.slice(0, 300).forEach(v => {
-                        html += `<option value="${v.id}">${v.id} (${v.type === 'release' ? 'Estable' : 'Snapshot/Beta'})</option>`;
-                    });
+                    let html = '<optgroup label="Bedrock Edition"><option value="Bedrock-Latest">Bedrock Última Versión</option><option value="Bedrock-Preview">Bedrock Preview</option></optgroup><optgroup label="Java Edition (Releases y Snapshots)">';
+                    data.versions.slice(0, 300).forEach(v => { html += `<option value="${v.id}">${v.id} (${v.type === 'release' ? 'Estable' : 'Snapshot/Beta'})</option>`; });
                     html += '</optgroup>';
-                    
-                    cachedVersionsHTML = html;
-                    select.innerHTML = html;
-                } catch(e) {
-                    select.innerHTML = '<option value="1.20.4">1.20.4 (Actual)</option><option value="1.20.2">1.20.2</option>';
-                }
+                    cachedVersionsHTML = html; select.innerHTML = html;
+                } catch(e) { select.innerHTML = '<option value="1.20.4">1.20.4 (Actual)</option><option value="1.20.2">1.20.2</option>'; }
             }
 
-            // --- SOLUCIÓN ERROR DE VINCULACIÓN ---
             function updateProviderUI() {
                 const user = auth.currentUser;
                 if(!user) return;
@@ -847,7 +816,11 @@
 
             async function linkProvider(provider, name) {
                 try {
-                    await linkWithPopup(auth.currentUser, provider);
+                    const result = await linkWithPopup(auth.currentUser, provider);
+                    const credential = provider.providerId === 'google.com' ? GoogleAuthProvider.credentialFromResult(result) : OAuthProvider.credentialFromResult(result);
+                    if (credential && credential.accessToken) {
+                        localStorage.setItem(provider.providerId + '_token', credential.accessToken);
+                    }
                     alert(`¡${name} vinculado correctamente! Ya puedes guardar tus mundos.`);
                     updateProviderUI(); 
                 } catch (e) {
@@ -866,36 +839,145 @@
                 if(!confirm(`¿Estás seguro de que quieres desvincular este servicio en la nube?`)) return;
                 try {
                     await unlink(auth.currentUser, providerId);
+                    localStorage.removeItem(providerId + '_token');
                     updateProviderUI();
                 } catch(e) {
-                    if (e.code === 'auth/no-such-provider') {
-                        updateProviderUI();
-                    } else {
-                        alert('Error al desvincular: No puedes desvincular el único método de entrada de tu cuenta. Agrega una contraseña u otro método primero.');
-                    }
+                    if (e.code === 'auth/no-such-provider') updateProviderUI();
+                    else alert('Error al desvincular.');
                 }
             }
 
-            window.createMockBackup = () => {
+            // NUEVO SISTEMA PARA GUARDAR Y CARGAR BACKUPS DE LA MEMORIA
+            function loadSavedBackups() {
+                const list = document.getElementById('backup-list');
+                const saved = JSON.parse(localStorage.getItem('saved_backups') || '[]');
+                
+                if (saved.length === 0) {
+                    list.innerHTML = '<div class="text-center text-gray-600 text-sm py-4">No hay copias de seguridad creadas aún.</div>';
+                    return;
+                }
+                
+                list.innerHTML = '';
+                saved.forEach(b => {
+                    const div = document.createElement('div');
+                    div.className = "backup-item flex flex-col bg-[#1a1a1a] p-4 rounded-lg border border-[#333] shadow-md mb-2";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start w-full">
+                            <div class="flex items-center gap-3">
+                                <i data-feather="check-circle" class="text-green-500 w-6 h-6"></i>
+                                <div>
+                                    <p class="text-sm text-white font-bold">${b.name}</p>
+                                    <p class="text-xs text-green-400 mt-1">Subido a ${b.provider} - ${b.time}</p>
+                                </div>
+                            </div>
+                            <button onclick="this.closest('.backup-item').remove(); window.removeBackup('${b.id}')" class="text-red-500 hover:text-red-400 p-2"><i data-feather="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+                feather.replace();
+            }
+
+            window.removeBackup = (id) => {
+                let saved = JSON.parse(localStorage.getItem('saved_backups') || '[]');
+                saved = saved.filter(b => b.id !== id);
+                localStorage.setItem('saved_backups', JSON.stringify(saved));
+                if(saved.length === 0) document.getElementById('backup-list').innerHTML = '<div class="text-center text-gray-600 text-sm py-4">No hay copias de seguridad creadas aún.</div>';
+            };
+
+            window.createBackup = async (providerName) => {
+                const isGoogle = providerName === 'gdrive';
+                const tokenKey = isGoogle ? 'google.com_token' : 'microsoft.com_token';
+                const token = localStorage.getItem(tokenKey);
+                const providerText = isGoogle ? 'Google Drive' : 'OneDrive';
+                
+                if (!token) {
+                    alert(`Por favor, "Vincular y Dar Permisos" a tu cuenta de ${providerText} antes de hacer un backup.`);
+                    return;
+                }
+
                 const list = document.getElementById('backup-list');
                 if(list.innerText.includes('No hay copias')) list.innerHTML = '';
                 
-                const d = new Date();
+                const backupId = Date.now().toString();
                 const div = document.createElement('div');
-                div.className = "backup-item flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-[#333]";
+                div.id = `backup-card-${backupId}`;
+                div.className = "backup-item flex flex-col bg-[#1a1a1a] p-4 rounded-lg border border-[#333] shadow-md mb-2";
+                
                 div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <i data-feather="archive" class="text-indigo-400 w-5 h-5"></i>
-                        <div>
-                            <p class="text-sm text-white font-bold">Respaldo_${d.getTime().toString().slice(-6)}.zip</p>
-                            <p class="text-xs text-gray-500">${d.toLocaleString()} - 450 MB</p>
+                    <div class="flex justify-between items-start w-full">
+                        <div class="flex items-center gap-3">
+                            <i data-feather="loader" id="icon-${backupId}" class="text-indigo-400 w-6 h-6 animate-spin"></i>
+                            <div>
+                                <p class="text-sm text-white font-bold" id="title-${backupId}">Preparando copia en ${providerText}...</p>
+                                <p class="text-xs text-yellow-400 mt-1" id="status-${backupId}">Comprimiendo y conectando...</p>
+                            </div>
+                        </div>
+                        <button onclick="this.closest('.backup-item').remove()" class="text-red-500 hover:text-red-400 p-2"><i data-feather="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                    <div id="progress-container-${backupId}" class="w-full mt-4">
+                        <div class="flex justify-between text-xs text-gray-400 mb-1">
+                            <span>Progreso de subida</span>
+                            <span id="pct-${backupId}">0%</span>
+                        </div>
+                        <div class="w-full bg-[#222] rounded-full h-2">
+                            <div id="bar-${backupId}" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                     </div>
-                    <button onclick="this.closest('.backup-item').remove()" class="text-red-500 hover:text-red-400 p-2"><i data-feather="trash-2" class="w-4 h-4"></i></button>
                 `;
                 list.prepend(div);
                 feather.replace();
-                alert('Copia de seguridad en proceso. Se subirá a la nube en unos momentos.');
+
+                let pct = 0;
+                const interval = setInterval(() => {
+                    if (pct < 90) {
+                        pct += Math.floor(Math.random() * 8) + 1;
+                        if(pct > 90) pct = 90;
+                        document.getElementById(`bar-${backupId}`).style.width = pct + '%';
+                        document.getElementById(`pct-${backupId}`).innerText = pct + '%';
+                    }
+                }, 1500);
+
+                try {
+                    const endpoint = isGoogle ? '/api/backup/gdrive' : '/api/backup/onedrive';
+                    const res = await fetch(`${API_URL}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    });
+                    const data = await res.json();
+                    
+                    clearInterval(interval);
+                    
+                    if (data.success) {
+                        document.getElementById(`bar-${backupId}`).style.width = '100%';
+                        document.getElementById(`pct-${backupId}`).innerText = '100%';
+                        document.getElementById(`bar-${backupId}`).classList.replace('bg-indigo-500', 'bg-green-500');
+                        
+                        const timeStr = new Date().toLocaleTimeString();
+                        document.getElementById(`icon-${backupId}`).outerHTML = `<i data-feather="check-circle" class="text-green-500 w-6 h-6"></i>`;
+                        document.getElementById(`title-${backupId}`).innerText = data.name;
+                        document.getElementById(`status-${backupId}`).innerText = `Subido a ${providerText} - ${timeStr}`;
+                        document.getElementById(`status-${backupId}`).classList.replace('text-yellow-400', 'text-green-400');
+                        
+                        setTimeout(() => { document.getElementById(`progress-container-${backupId}`).style.display = 'none'; }, 2000);
+                        feather.replace();
+
+                        // Guardamos en la memoria para que no se borre al dar F5
+                        const saved = JSON.parse(localStorage.getItem('saved_backups') || '[]');
+                        saved.unshift({ id: backupId, name: data.name, provider: providerText, time: timeStr });
+                        localStorage.setItem('saved_backups', JSON.stringify(saved));
+
+                    } else { throw new Error(data.error); }
+                } catch(e) {
+                    clearInterval(interval);
+                    document.getElementById(`progress-container-${backupId}`).style.display = 'none';
+                    document.getElementById(`icon-${backupId}`).outerHTML = `<i data-feather="alert-triangle" class="text-red-500 w-6 h-6"></i>`;
+                    document.getElementById(`title-${backupId}`).innerText = 'Error al crear la copia en la nube';
+                    document.getElementById(`status-${backupId}`).innerText = e.message;
+                    document.getElementById(`status-${backupId}`).classList.replace('text-yellow-400', 'text-red-500');
+                    feather.replace();
+                }
             };
 
             function initCharts() {
@@ -907,14 +989,8 @@
                 if(!ramCtx || !cpuCtx) return;
 
                 const commonOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 0 },
-                    elements: { point: { radius: 0 } }, 
-                    scales: {
-                        x: { display: false }, 
-                        y: { display: true, min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666', font: {size: 10} } }
-                    },
+                    responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, elements: { point: { radius: 0 } }, 
+                    scales: { x: { display: false }, y: { display: true, min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666', font: {size: 10} } } },
                     plugins: { legend: { display: false } }
                 };
 
@@ -938,43 +1014,41 @@
                     const isOn = data.status === 'on';
                     
                     const sText = document.getElementById('status-text');
-                    const bStart = document.getElementById('btn-start');
-                    const bRestart = document.getElementById('btn-restart');
-                    const bStop = document.getElementById('btn-stop');
-
                     if (sText) {
                         sText.innerText = isOn ? 'ONLINE' : 'OFFLINE';
                         sText.className = isOn ? 'text-sm font-bold text-green-500 uppercase tracking-widest' : 'text-sm font-bold text-red-500 uppercase tracking-widest';
                     }
 
-                    if (bStart) bStart.disabled = isOn;         
-                    if (bRestart) bRestart.disabled = !isOn;    
-                    if (bStop) bStop.disabled = !isOn;          
+                    if (document.getElementById('btn-start')) document.getElementById('btn-start').disabled = isOn;         
+                    if (document.getElementById('btn-restart')) document.getElementById('btn-restart').disabled = !isOn;    
+                    if (document.getElementById('btn-stop')) document.getElementById('btn-stop').disabled = !isOn;          
 
                     if (isOn) {
                         const statRes = await fetch(`${API_URL}/api/server/stats`);
                         const statData = await statRes.json();
                         
                         if (document.getElementById('stat-cpu-value')) document.getElementById('stat-cpu-value').innerText = statData.cpu;
-                        if (document.getElementById('stat-ram-value')) document.getElementById('stat-ram-value').innerText = statData.ram;
-                        if (document.getElementById('stat-disk-value')) document.getElementById('stat-disk-value').innerText = statData.disk;
+                        if (document.getElementById('stat-ram-value')) document.getElementById('stat-ram-value').innerText = `${(parseFloat(statData.ram) / 1024).toFixed(2)} GB / 8.00 GB`;
+
+                        if (document.getElementById('stat-disk-header')) {
+                            let diskNum = parseInt(statData.disk) || 0;
+                            document.getElementById('stat-disk-header').innerText = diskNum + '% USADO';
+                            if (document.getElementById('stat-disk-value')) document.getElementById('stat-disk-value').innerText = diskNum + '%';
+                            if (document.getElementById('stat-disk-bar')) document.getElementById('stat-disk-bar').style.width = diskNum + '%';
+                        }
 
                         if(ramChart && cpuChart) {
-                            const ramVal = parseFloat(statData.ram.replace(' MB', ''));
-                            const cpuVal = parseFloat(statData.cpu.replace('%', ''));
-                            
-                            ramChart.data.datasets[0].data.shift();
-                            ramChart.data.datasets[0].data.push(ramVal);
-                            ramChart.update();
-
-                            cpuChart.data.datasets[0].data.shift();
-                            cpuChart.data.datasets[0].data.push(cpuVal);
-                            cpuChart.update();
+                            ramChart.data.datasets[0].data.shift(); ramChart.data.datasets[0].data.push(parseFloat(statData.ram)); ramChart.update();
+                            cpuChart.data.datasets[0].data.shift(); cpuChart.data.datasets[0].data.push(parseFloat(statData.cpu)); cpuChart.update();
                         }
                     } else {
                         if (document.getElementById('stat-cpu-value')) document.getElementById('stat-cpu-value').innerText = '0%';
-                        if (document.getElementById('stat-ram-value')) document.getElementById('stat-ram-value').innerText = '0 MB';
-                        
+                        if (document.getElementById('stat-ram-value')) document.getElementById('stat-ram-value').innerText = '0.00 GB / 8.00 GB';
+                        if (document.getElementById('stat-disk-header')) {
+                            document.getElementById('stat-disk-header').innerText = '0% USADO';
+                            if(document.getElementById('stat-disk-value')) document.getElementById('stat-disk-value').innerText = '0%';
+                            if(document.getElementById('stat-disk-bar')) document.getElementById('stat-disk-bar').style.width = '0%';
+                        }
                         if(ramChart && cpuChart) {
                             ramChart.data.datasets[0].data.shift(); ramChart.data.datasets[0].data.push(0); ramChart.update();
                             cpuChart.data.datasets[0].data.shift(); cpuChart.data.datasets[0].data.push(0); cpuChart.update();

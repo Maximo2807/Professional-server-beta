@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Servidor | Professional Servers</title>
+    <link rel="icon" type="image/x-icon" href="./assets/img/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Poppins:wght@300;400;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #f4f4f5; color: #333; overflow-x: hidden; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; flex-direction: column; }
+        
+        .titulo-principal { font-size: 32px; font-weight: bold; color: #3b82f6; margin-bottom: 30px; text-transform: uppercase; }
+
+        .caja-config { width: 100%; max-width: 800px; background: white; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        /* Pestañas Java / Bedrock */
+        .tabs-plataforma { display: flex; background: #2d3748; color: white; padding: 10px 15px; gap: 10px; }
+        .tab-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.2s; border: 2px solid transparent; }
+        .tab-btn.active { background: #3b82f6; border-color: #60a5fa; }
+        .tab-btn:hover:not(.active) { background: #4b5563; }
+
+        /* Tarjeta de Servidor (Estilo Minecraft) */
+        .mc-server-card { background: #111; border: 4px solid #222; padding: 15px; display: flex; gap: 15px; position: relative; margin: 15px; }
+        .mc-icon { width: 64px; height: 64px; background: white; padding: 5px; border-radius: 4px; border: 2px solid #555; }
+        .mc-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        .mc-ip-container { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .mc-ip-input { background: transparent; border: none; color: white; font-size: 18px; font-weight: bold; outline: none; border-bottom: 1px dashed #555; width: 150px; font-family: 'Poppins', sans-serif; }
+        .mc-ip-suffix { color: #aaa; font-size: 18px; font-weight: bold; }
+        
+        .mc-motd-container { display: flex; align-items: center; gap: 8px; }
+        .mc-motd-input { background: transparent; border: none; color: #aaa; font-size: 14px; outline: none; border-bottom: 1px dashed #555; width: 100%; font-family: 'Press Start 2P', monospace; font-size: 10px; line-height: 1.5; }
+        
+        .edit-icon { color: white; background: #3b82f6; padding: 4px; border-radius: 4px; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+
+        /* Acordeón de Opciones */
+        .opciones-avanzadas { background: #1f2937; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .panel-avanzado { background: #374151; padding: 20px; display: none; color: white; }
+        .panel-avanzado.open { display: block; }
+        
+        .grupo-input { margin-bottom: 15px; width: 100%; }
+        .grupo-input label { display: block; font-size: 12px; color: #ccc; margin-bottom: 5px; text-transform: uppercase; font-weight: bold;}
+        .grupo-input select { width: 100%; padding: 10px; background: #111; border: 1px solid #555; border-radius: 6px; color: white; outline: none; }
+
+        .btn-crear { display: flex; align-items: center; justify-content: center; gap: 10px; width: 200px; padding: 15px; background: #3b82f6; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; color: white; font-size: 16px; margin: 30px auto; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+        .btn-crear:hover { background: #2563eb; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    
+    <h1 class="titulo-principal">Crear un servidor</h1>
+    
+    <form id="project-setup-form" class="caja-config">
+        
+        <div class="tabs-plataforma">
+            <div class="tab-btn active" data-edition="java">
+                <i data-feather="monitor" class="w-4 h-4"></i> Minecraft: Java Edition
+            </div>
+            <div class="tab-btn" data-edition="bedrock">
+                <i data-feather="smartphone" class="w-4 h-4"></i> Minecraft: Bedrock Edition
+            </div>
+            <input type="hidden" id="server-edition" value="java">
+        </div>
+
+        <div class="mc-server-card">
+            <img src="./assets/img/favicon.ico" class="mc-icon" alt="Icono">
+            <div class="mc-info">
+                
+                <div class="mc-ip-container">
+                    <input type="text" id="custom-ip" class="mc-ip-input" value="miserver" maxlength="15">
+                    <span class="mc-ip-suffix" id="ip-suffix">.proservers.me</span>
+                    <div class="edit-icon"><i data-feather="edit-2" class="w-3 h-3"></i></div>
+                </div>
+
+                <div class="mc-motd-container">
+                    <input type="text" id="custom-motd" class="mc-motd-input" value="¡Bienvenido a mi nuevo servidor!" maxlength="50">
+                    <div class="edit-icon"><i data-feather="edit-2" class="w-3 h-3"></i></div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="opciones-avanzadas" id="btn-avanzado">
+            <span class="font-bold flex items-center gap-2"><i data-feather="settings" class="w-4 h-4"></i> Software y Versión</span>
+            <i data-feather="chevron-down" class="w-5 h-5"></i>
+        </div>
+        <div class="panel-avanzado" id="panel-avanzado">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="grupo-input">
+                    <label>Software</label>
+                    <select id="software-select">
+                        <option value="Vanilla">Vanilla (Por defecto)</option>
+                        <option value="Paper">Paper (Recomendado para Plugins)</option>
+                        <option value="Forge">Forge (Para Mods)</option>
+                    </select>
+                </div>
+                <div class="grupo-input">
+                    <label>Versión</label>
+                    <select id="mc-version-select">
+                        <option value="1.20.4">Cargando versiones...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-crear">
+            <i data-feather="plus" class="w-5 h-5"></i> Crear
+        </button>
+
+    </form>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+        
+        const firebaseConfig = { apiKey: "AIzaSyAg-wvhB7iaHOF5UOSsOOOz6le1ZutVmMM", authDomain: "proffesional-server.firebaseapp.com", projectId: "proffesional-server", storageBucket: "proffesional-server.firebasestorage.app", messagingSenderId: "833822850667", appId: "1:833822850667:web:3c03219c6822116edbfb2e", measurementId: "G-8SZ528Y5NZ" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => { if (!user) window.location.href = 'index.html'; });
+
+        feather.replace();
+        const API_URL = "http://localhost:3000";
+
+        const randomHash = Math.random().toString(36).substring(2, 6);
+        document.getElementById('ip-suffix').innerText = `-${randomHash}.proservers.me`;
+
+        const tabs = document.querySelectorAll('.tab-btn');
+        const editionInput = document.getElementById('server-edition');
+        const softwareSelect = document.getElementById('software-select');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const edition = tab.getAttribute('data-edition');
+                editionInput.value = edition;
+
+                if (edition === 'bedrock') {
+                    softwareSelect.innerHTML = `<option value="Bedrock">Bedrock Dedicated Server</option><option value="Pocketmine">Pocketmine (Plugins)</option>`;
+                } else {
+                    softwareSelect.innerHTML = `<option value="Vanilla">Vanilla (Por defecto)</option><option value="Paper">Paper (Recomendado para Plugins)</option><option value="Forge">Forge (Para Mods)</option>`;
+                }
+            });
+        });
+
+        document.getElementById('btn-avanzado').addEventListener('click', () => {
+            document.getElementById('panel-avanzado').classList.toggle('open');
+        });
+
+        async function loadMinecraftVersions() {
+            const select = document.getElementById('mc-version-select');
+            try {
+                const res = await fetch('https://launchermeta.mojang.com/mc/game/version_manifest.json');
+                const data = await res.json();
+                let html = '';
+                data.versions.slice(0, 30).forEach(v => { if(v.type === 'release') html += `<option value="${v.id}">${v.id}</option>`; });
+                select.innerHTML = html;
+            } catch(e) { select.innerHTML = '<option value="1.20.4">1.20.4</option>'; }
+        }
+        loadMinecraftVersions();
+
+        document.getElementById('project-setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerHTML = `<i data-feather="loader" class="w-5 h-5 animate-spin"></i> Creando...`;
+            btn.disabled = true;
+            feather.replace();
+
+            const user = auth.currentUser;
+            const fullIp = document.getElementById('custom-ip').value.trim() + document.getElementById('ip-suffix').innerText;
+            
+            const payload = {
+                uid: user.uid,
+                edition: editionInput.value,
+                motd: document.getElementById('custom-motd').value.trim(),
+                address: fullIp,
+                software: document.getElementById('software-select').value,
+                version: document.getElementById('mc-version-select').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/api/project/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert('¡Servidor creado! Redirigiendo al panel...');
+                    window.location.href = 'index.html'; 
+                } else { throw new Error(data.error); }
+            } catch (err) {
+                alert("Error al crear el proyecto: " + err.message);
+                btn.innerHTML = `<i data-feather="plus" class="w-5 h-5"></i> Crear`;
+                btn.disabled = false;
+                feather.replace();
+            }
+        });
+    </script>
+</body>
+</html>
