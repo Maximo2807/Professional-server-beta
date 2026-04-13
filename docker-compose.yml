@@ -29,4 +29,5 @@ volumes:
 
 networks:
   minecraft-net:
+    name: minecraft-panel_minecraft-net
     driver: bridge

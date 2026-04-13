@@ -7,10 +7,10 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copia la configuración de Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copia el index.html
-COPY index.html /usr/share/nginx/html/
+# Copia TODOS los archivos HTML de la carpeta frontend
+COPY *.html /usr/share/nginx/html/
 
-# ¡LA LÍNEA MÁGICA! Copia la carpeta assets entera (imágenes y videos)
+# Copia la carpeta assets entera (imágenes y videos)
 COPY assets /usr/share/nginx/html/assets
 
 # Expone el puerto 80
