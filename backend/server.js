@@ -1,270 +1,277 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
-const { Server } = require("socket.io");
-const path = require('path');
-const fs = require('fs').promises;
-const fsSync = require('fs');
+const { Server } = require('socket.io');
 const Docker = require('dockerode');
-const { Rcon } = require('rcon-client');
-const archiver = require('archiver');
-const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const PORT = 3000;
-const SERVER_DATA_PATH = process.env.SERVER_DATA_PATH || '/minecraft-server-data';
-const DATA_DIR = path.join(__dirname, 'data');
-const DB_FILE = path.join(DATA_DIR, 'projects.json');
+const io = new Server(server, { cors: { origin: '*' } });
+const docker = new Docker();
 
-if (!fsSync.existsSync(DATA_DIR)) fsSync.mkdirSync(DATA_DIR, { recursive: true });
-if (!fsSync.existsSync(DB_FILE)) fsSync.writeFileSync(DB_FILE, JSON.stringify({}));
-
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-
-app.use(cors({ origin: "*" }));
+app.use(cors());
 app.use(express.json());
-const io = new Server(server, { cors: { origin: "*" } });
 
-async function getActiveContainerInfo(req) {
-    try {
-        const uid = req.query.uid || req.body.uid;
-        const serverId = req.query.serverId || req.body.serverId;
-        if (!uid || !serverId) return null;
-        
-        const db = JSON.parse(await fs.readFile(DB_FILE, 'utf-8'));
-        let userServers = db[uid] || [];
-        
-        if (!Array.isArray(userServers)) {
-            userServers.id = "migrated_1";
-            db[uid] = [userServers];
-            await fs.writeFile(DB_FILE, JSON.stringify(db));
-            userServers = db[uid];
-        }
-        
-        return userServers.find(s => s.id === serverId) || null; 
-    } catch(e) { return null; }
+// Base de datos simple basada en JSON
+const dbPath = path.join(__dirname, 'database.json');
+function loadDB() {
+    if (!fs.existsSync(dbPath)) fs.writeFileSync(dbPath, JSON.stringify({ users: {} }));
+    return JSON.parse(fs.readFileSync(dbPath));
+}
+function saveDB(data) {
+    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
 }
 
-async function getMinecraftContainer(req) { 
-    const info = await getActiveContainerInfo(req);
-    if (!info) return null;
-    try { 
-        const c = docker.getContainer(info.containerName); 
-        await c.inspect(); 
-        return c; 
-    } catch (e) { return null; } 
-}
+// ==========================================
+// RUTAS DE PROYECTOS (CREAR, BORRAR, CHECK)
+// ==========================================
 
-app.get('/api/project/check', async (req, res) => {
-    try {
-        const uid = req.query.uid;
-        const db = JSON.parse(await fs.readFile(DB_FILE, 'utf-8'));
-        
-        let userServers = db[uid] || [];
-        if (!Array.isArray(userServers) && userServers.projectName) {
-            userServers.id = Date.now().toString();
-            db[uid] = [userServers];
-            await fs.writeFile(DB_FILE, JSON.stringify(db));
-            userServers = db[uid];
-        }
-        
-        res.json({ exists: userServers.length > 0, servers: userServers });
-    } catch (error) { res.status(500).json({ error: error.message }); }
+app.get('/api/project/check', (req, res) => {
+    const db = loadDB();
+    const userServers = db.users[req.query.uid] || [];
+    res.json({ exists: userServers.length > 0, servers: userServers });
 });
 
 app.post('/api/project/create', async (req, res) => {
-    const { uid, edition, motd, address, software, version } = req.body;
+    const { uid, edition, projectName, motd, software, version } = req.body;
+    const db = loadDB();
+    if (!db.users[uid]) db.users[uid] = [];
+
+    const serverId = Date.now().toString();
+    const newServer = { id: serverId, edition, projectName, motd, software, version, publicIp: null };
     
+    db.users[uid].push(newServer);
+    saveDB(db);
+
+    // FIX NGrok: Respondemos rápido para evitar el error de "Unexpected token" (Timeout)
+    res.json({ success: true, message: "Creando en segundo plano" });
+
+    // Hacemos el trabajo pesado en segundo plano
     try {
-        const db = JSON.parse(await fs.readFile(DB_FILE, 'utf-8'));
-        if (!db[uid]) db[uid] = [];
-        
-        if (db[uid].length >= 2) {
-            return res.status(400).json({ error: "Has alcanzado el límite de 2 servidores gratuitos." });
-        }
+        const mcContainerName = `mc-${serverId}`;
+        const playitContainerName = `playit-${serverId}`;
+        const serverPath = path.join(__dirname, 'servers', serverId);
+        if (!fs.existsSync(serverPath)) fs.mkdirSync(serverPath, { recursive: true });
 
-        const serverId = Date.now().toString();
-        const containerName = `proserver-${uid.substring(0, 4)}-${serverId.substring(8)}`;
-        const playitContainerName = `playit-${uid.substring(0, 4)}-${serverId.substring(8)}`;
-        
-        let imageName = 'itzg/minecraft-server:latest';
-        let envVars = [
-            "EULA=TRUE", 
-            `VERSION=${version}`, 
-            `MOTD=${motd}`, 
-            "RCON_PORT=25575", 
-            "RCON_PASSWORD=proservers123", 
-            "MEMORY=4G",
-            "SERVER_PORT=25565" 
-        ];
-
-        if (edition === 'bedrock') {
-            imageName = 'itzg/minecraft-bedrock-server:latest';
-            envVars = ["EULA=TRUE", `VERSION=${version}`, `SERVER_NAME=${motd}`, "SERVER_PORT=19132"];
-        } else {
-            if (software === 'Paper') envVars.push("TYPE=PAPER");
-            else if (software === 'Forge') envVars.push("TYPE=FORGE");
-            else envVars.push("TYPE=VANILLA");
-        }
-
-        const pullImage = (img) => new Promise((resolve, reject) => {
-            docker.pull(img, (err, stream) => {
-                if (err) return reject(err);
-                docker.modem.followProgress(stream, (err, output) => { if (err) return reject(err); resolve(output); });
-            });
-        });
-
-        try { await pullImage(imageName); } catch (e) {}
-        
-        // EL ARREGLO DE RCON: Vuelve a la red compartida
-        const container = await docker.createContainer({
-            Image: imageName, name: containerName, Env: envVars,
-            HostConfig: { 
-                Binds: [`minecraft-data-${serverId}:/data`], 
-                NetworkMode: "minecraft-panel_minecraft-net" 
+        // Contenedor de Minecraft (ITZG) - PREPARADO PARA 8GB (Azure)
+        await docker.createContainer({
+            Image: 'itzg/minecraft-server',
+            name: mcContainerName,
+            Env: [
+                'EULA=TRUE',
+                `VERSION=${version}`,
+                `TYPE=${software.toUpperCase()}`,
+                `MOTD=${motd}`,
+                'MEMORY=8G' // ASIGNACIÓN DE 8GB REALES
+            ],
+            HostConfig: {
+                Memory: 8589934592, // 8GB en Bytes
+                Binds: [`${serverPath}:/data`]
             }
-        });
-        await container.start();
+        }).then(container => container.start());
 
-        const playitImage = 'pepaondrugs/playitgg-docker:latest';
-        try {
-            await pullImage(playitImage);
-            const playitContainer = await docker.createContainer({ 
-                Image: playitImage, name: playitContainerName, 
-                HostConfig: { NetworkMode: `container:${containerName}` } 
-            });
-            await playitContainer.start();
-        } catch(e) { console.log("Error Playit: ", e.message); }
+        // Contenedor de Playit.gg
+        await docker.createContainer({
+            Image: 'playitgg/playit',
+            name: playitContainerName,
+            HostConfig: { NetworkMode: `container:${mcContainerName}` } // Se cuelga de la red del MC
+        }).then(container => container.start());
 
-        db[uid].push({ 
-            id: serverId, projectName: address, containerName, playitContainerName, 
-            edition, software, version, motd, publicIp: null 
-        });
-        await fs.writeFile(DB_FILE, JSON.stringify(db));
-
-        res.json({ success: true });
-    } catch (error) { res.status(500).json({ error: error.message }); }
+    } catch (err) {
+        console.error("Error creando contenedores de fondo:", err);
+    }
 });
 
 app.post('/api/project/delete', async (req, res) => {
+    const { uid, serverId } = req.body;
+    const db = loadDB();
+    if (db.users[uid]) {
+        db.users[uid] = db.users[uid].filter(s => s.id !== serverId);
+        saveDB(db);
+    }
+
+    // FIX: Limpieza extrema de contenedores
     try {
-        const { uid, serverId } = req.body;
-        const db = JSON.parse(await fs.readFile(DB_FILE, 'utf-8'));
+        const mc = docker.getContainer(`mc-${serverId}`);
+        await mc.stop().catch(() => {});
+        await mc.remove({ force: true, v: true }).catch(() => {});
+
+        const playit = docker.getContainer(`playit-${serverId}`);
+        await playit.stop().catch(() => {});
+        await playit.remove({ force: true, v: true }).catch(() => {});
         
-        if (!db[uid]) return res.status(404).json({ error: "Usuario no encontrado" });
-        
-        const serverIndex = db[uid].findIndex(s => s.id === serverId);
-        if (serverIndex === -1) return res.status(404).json({ error: "Servidor no encontrado" });
+        // Opcional: Borrar carpeta de archivos (descomentar si querés borrar todo el mundo al eliminar)
+        // fs.rmSync(path.join(__dirname, 'servers', serverId), { recursive: true, force: true });
+    } catch (e) {}
 
-        const server = db[uid][serverIndex];
-
-        try { 
-            const c1 = docker.getContainer(server.containerName); 
-            await c1.stop().catch(e=>e); await c1.remove().catch(e=>e); 
-        } catch(e){}
-        try { 
-            const c2 = docker.getContainer(server.playitContainerName); 
-            await c2.stop().catch(e=>e); await c2.remove().catch(e=>e); 
-        } catch(e){}
-
-        db[uid].splice(serverIndex, 1);
-        await fs.writeFile(DB_FILE, JSON.stringify(db));
-
-        res.json({ success: true });
-    } catch (error) { res.status(500).json({ error: error.message }); }
+    res.json({ success: true });
 });
 
-app.post('/api/project/ip', async (req, res) => {
+app.post('/api/project/ip', (req, res) => {
+    const { uid, serverId, ip } = req.body;
+    const db = loadDB();
+    const server = db.users[uid]?.find(s => s.id === serverId);
+    if (server) { server.publicIp = ip; saveDB(db); }
+    res.json({ success: true });
+});
+
+// ==========================================
+// RUTAS DE GESTIÓN DEL SERVIDOR (ON/OFF, STATS)
+// ==========================================
+
+app.get('/api/server/status', async (req, res) => {
     try {
-        const { uid, serverId, ip } = req.body;
-        const db = JSON.parse(await fs.readFile(DB_FILE, 'utf-8'));
-        if (db[uid]) {
-            const server = db[uid].find(s => s.id === serverId);
-            if (server) {
-                server.publicIp = ip;
-                await fs.writeFile(DB_FILE, JSON.stringify(db));
-                return res.json({ success: true });
-            }
-        }
-        res.status(404).json({ error: 'Servidor no encontrado' });
-    } catch(e) { res.status(500).json({ error: e.message }); }
+        const container = docker.getContainer(`mc-${req.query.serverId}`);
+        const data = await container.inspect();
+        res.json({ status: data.State.Running ? 'on' : 'off' });
+    } catch (e) { res.json({ status: 'off' }); }
 });
 
-app.get('/api/server/status', async (req, res) => { 
-    const c = await getMinecraftContainer(req); 
-    if (!c) return res.status(404).json({ status: 'off' }); 
-    const data = await c.inspect(); res.json({ status: data.State.Status === 'running' ? 'on' : 'off' }); 
+app.post('/api/server/start', async (req, res) => {
+    try { await docker.getContainer(`mc-${req.body.serverId}`).start(); res.json({ success: true }); } catch(e) { res.json({ error: e.message }); }
 });
 
-// EL ARREGLO DE LOS LOGS VACÍOS: Limpieza de basura binaria
-app.get('/api/server/playitlogs', async (req, res) => {
-    try {
-        const info = await getActiveContainerInfo(req);
-        if (!info || !info.playitContainerName) return res.json({ logs: 'Esperando contenedor de red...' });
-        const pC = docker.getContainer(info.playitContainerName);
-        const logsBuffer = await pC.logs({ stdout: true, stderr: true, tail: 100 });
-        let logsText = logsBuffer.toString('utf8').replace(/[^\x20-\x7E\n]/g, '');
-        res.json({ logs: logsText });
-    } catch(e) { res.json({ logs: 'Conectando con consola de Playit...' }); }
+app.post('/api/server/stop', async (req, res) => {
+    try { await docker.getContainer(`mc-${req.body.serverId}`).stop(); res.json({ success: true }); } catch(e) { res.json({ error: e.message }); }
 });
 
-app.post('/api/server/:action(start|stop|restart)', async (req, res) => { 
-    const c = await getMinecraftContainer(req); 
-    if (!c) return res.status(404).json({ error: "Contenedor no encontrado." }); 
-    try { await c[req.params.action](); res.json({ success: true }); } 
-    catch (e) { res.status(500).json({ error: e.message }); }
+app.post('/api/server/restart', async (req, res) => {
+    try { await docker.getContainer(`mc-${req.body.serverId}`).restart(); res.json({ success: true }); } catch(e) { res.json({ error: e.message }); }
 });
 
 app.get('/api/server/stats', async (req, res) => {
     try {
-        const c = await getMinecraftContainer(req); if (!c) return res.json({ cpu: '0%', ram: '0 MB', disk: '0' });
-        const data = await c.inspect(); if (data.State.Status !== 'running') return res.json({ cpu: '0%', ram: '0 MB', disk: '0' });
-        const stats = await c.stats({ stream: false });
-        const ramMB = (stats.memory_stats.usage / 1024 / 1024).toFixed(1) + ' MB';
-        let cpuPercent = '0.0';
-        try {
-            const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
-            const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
-            if (systemDelta > 0 && cpuDelta > 0) cpuPercent = ((cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100).toFixed(1);
-        } catch(e) {}
-        res.json({ cpu: `${cpuPercent}%`, ram: ramMB, disk: '5' }); 
-    } catch(e) { res.json({ cpu: '0%', ram: '0 MB', disk: '0' }); }
+        const container = docker.getContainer(`mc-${req.query.serverId}`);
+        const stats = await container.stats({ stream: false });
+        // Cálculo de Docker CPU y RAM
+        const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+        const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+        let cpu = 0;
+        if (systemDelta > 0 && cpuDelta > 0) cpu = ((cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100).toFixed(1);
+        const ram = (stats.memory_stats.usage / (1024 * 1024)).toFixed(2); // MB
+        res.json({ cpu: `${cpu}%`, ram });
+    } catch (e) { res.json({ cpu: '0%', ram: '0' }); }
 });
 
-async function executeRconCommand(req, command) { 
-    const info = await getActiveContainerInfo(req); if(!info || info.edition === 'bedrock') return null; 
-    try { const rcon = await Rcon.connect({ host: info.containerName, port: 25575, password: "proservers123" }); const response = await rcon.send(command); await rcon.end(); return response; } catch (e) { return null; } 
-}
+// ==========================================
+// RUTAS DE JUGADORES Y COMANDOS (FIX RCON)
+// ==========================================
 
-app.get('/api/server/players', async (req, res) => { 
-    const response = await executeRconCommand(req, 'list'); 
-    if (response === null) return res.status(500).json({ error: 'RCON offline o Bedrock.' }); 
-    const match = response.match(/online:(.*)/); if (!match || !match[1]) return res.json({ players: [] }); 
-    const playerNames = match[1].trim().split(', ').filter(Boolean); res.json({ players: playerNames.map(name => ({ name, avatar: `https://cravatar.eu/helmavatar/${name}/80.png` })) }); 
+app.post('/api/server/command', async (req, res) => {
+    const { serverId, command } = req.body;
+    if (!command) return res.status(400).json({ error: "Comando vacío" });
+    try {
+        const container = docker.getContainer(`mc-${serverId}`);
+        const exec = await container.exec({ Cmd: ['rcon-cli', command], AttachStdout: true, AttachStderr: true });
+        exec.start((err, stream) => res.json({ success: true }));
+    } catch (e) { res.status(500).json({ error: "Error de comando" }); }
 });
 
-app.post('/api/server/command', async (req, res) => { await executeRconCommand(req, req.body.command); res.json({ success: true }); });
-
-app.get('/api/files/list', async (req, res) => { 
-    try { const reqPath = req.query.path || '/'; const safePath = path.normalize(reqPath).replace(/^(\.\.(\/|\\|$))+/, ''); const dirents = await fs.readdir(path.join(SERVER_DATA_PATH, safePath), { withFileTypes: true }); res.json(await Promise.all(dirents.map(async (d) => ({ name: d.name, isDir: d.isDirectory(), path: path.join(safePath, d.name) })))); } catch (e) { res.status(500).json({ error: 'Error' }); } 
+app.post('/api/server/kick', async (req, res) => {
+    const { serverId, player } = req.body;
+    try {
+        const container = docker.getContainer(`mc-${serverId}`);
+        const exec = await container.exec({ Cmd: ['rcon-cli', 'kick', player], AttachStdout: true });
+        exec.start((err, stream) => res.json({ success: true }));
+    } catch (e) { res.status(500).json({ error: "Error al expulsar" }); }
 });
 
-app.get('/api/files/content', async (req, res) => { try { res.json({ content: await fs.readFile(path.join(SERVER_DATA_PATH, path.normalize(req.query.path).replace(/^(\.\.(\/|\\|$))+/, '')), 'utf-8') }); } catch (e) { res.status(500).json({ error: 'Error' }); } });
-app.post('/api/files/save', async (req, res) => { try { await fs.writeFile(path.join(SERVER_DATA_PATH, path.normalize(req.body.path).replace(/^(\.\.(\/|\\|$))+/, '')), req.body.content); res.json({ success: true }); } catch(e) { res.status(500).json({ error: 'Error' }); } });
-
-async function createZip(zipPath) { const output = fsSync.createWriteStream(zipPath); const archive = archiver('zip', { zlib: { level: 9 } }); const zipPromise = new Promise((resolve, reject) => { output.on('close', resolve); archive.on('error', reject); }); archive.pipe(output); archive.directory(SERVER_DATA_PATH, false); archive.finalize(); await zipPromise; }
-
-app.post('/api/backup/gdrive', async (req, res) => { const { token } = req.body; if (!token) return res.status(400).json({ error: 'No token.' }); const zipName = `Respaldo_${Date.now()}.zip`; const zipPath = path.join(__dirname, zipName); try { await createZip(zipPath); const authClient = new google.auth.OAuth2(); authClient.setCredentials({ access_token: token }); const drive = google.drive({ version: 'v3', auth: authClient }); await drive.files.create({ resource: { name: zipName }, media: { mimeType: 'application/zip', body: fsSync.createReadStream(zipPath) } }); if (fsSync.existsSync(zipPath)) fsSync.unlinkSync(zipPath); res.json({ success: true, name: zipName }); } catch (error) { if (fsSync.existsSync(zipPath)) fsSync.unlinkSync(zipPath); res.status(500).json({ error: error.message }); } });
-app.post('/api/backup/onedrive', async (req, res) => { const { token } = req.body; if (!token) return res.status(400).json({ error: 'No token.' }); const zipName = `Respaldo_${Date.now()}.zip`; const zipPath = path.join(__dirname, zipName); try { await createZip(zipPath); const fileBuffer = await fs.readFile(zipPath); const msRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${zipName}:/content`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/zip' }, body: fileBuffer }); if (!msRes.ok) throw new Error(await msRes.text()); if (fsSync.existsSync(zipPath)) fsSync.unlinkSync(zipPath); res.json({ success: true, name: zipName }); } catch (error) { if (fsSync.existsSync(zipPath)) fsSync.unlinkSync(zipPath); res.status(500).json({ error: error.message }); } });
-
-io.on('connection', async (socket) => { 
-    const req = { query: socket.handshake.query };
-    const c = await getMinecraftContainer(req); 
-    if (!c) return; 
-    const logStream = await c.logs({ follow: true, stdout: true, stderr: true, tail: 100 }); 
-    logStream.on('data', chunk => socket.emit('log', chunk.toString('utf8'))); 
-    socket.on('disconnect', () => logStream.destroy()); 
+app.post('/api/server/ban', async (req, res) => {
+    const { serverId, player } = req.body;
+    try {
+        const container = docker.getContainer(`mc-${serverId}`);
+        const exec = await container.exec({ Cmd: ['rcon-cli', 'ban', player], AttachStdout: true });
+        exec.start((err, stream) => res.json({ success: true }));
+    } catch (e) { res.status(500).json({ error: "Error al banear" }); }
 });
 
-server.listen(PORT, () => console.log(`Backend V2 corriendo en puerto ${PORT}`));
+app.get('/api/server/players', async (req, res) => {
+    try {
+        const container = docker.getContainer(`mc-${req.query.serverId}`);
+        const exec = await container.exec({ Cmd: ['rcon-cli', 'list'], AttachStdout: true });
+        exec.start((err, stream) => {
+            if (err) return res.json({ players: [] });
+            let output = '';
+            stream.on('data', chunk => output += chunk.toString());
+            stream.on('end', () => {
+                // Parseamos la salida de Minecraft: "There are X of a max of Y players online: maxpro, steve"
+                const players = [];
+                const parts = output.split(':');
+                if (parts.length > 1 && parts[1].trim() !== '') {
+                    const names = parts[1].split(',').map(n => n.trim());
+                    names.forEach(n => {
+                        if(n) players.push({ name: n, avatar: `https://minotar.net/helm/${n}/100.png` });
+                    });
+                }
+                res.json({ players });
+            });
+        });
+    } catch (e) { res.json({ players: [] }); }
+});
+
+// ==========================================
+// RUTAS DE ARCHIVOS Y LOGS PLAYIT
+// ==========================================
+
+app.get('/api/files/list', (req, res) => {
+    const { serverId } = req.query;
+    let targetPath = req.query.path || '/';
+    if (targetPath.includes('..')) targetPath = '/'; // Seguridad básica
+    
+    const fullPath = path.join(__dirname, 'servers', serverId, targetPath);
+    if (!fs.existsSync(fullPath)) return res.json([]);
+
+    const items = fs.readdirSync(fullPath, { withFileTypes: true }).map(dirent => ({
+        name: dirent.name,
+        isDir: dirent.isDirectory(),
+        path: path.join(targetPath, dirent.name)
+    }));
+    res.json(items);
+});
+
+app.get('/api/files/content', (req, res) => {
+    const { serverId, path: filePath } = req.query;
+    if (filePath.includes('..')) return res.status(403).json({ error: 'Acceso denegado' });
+    const fullPath = path.join(__dirname, 'servers', serverId, filePath);
+    if (fs.existsSync(fullPath)) res.json({ content: fs.readFileSync(fullPath, 'utf8') });
+    else res.status(404).json({ error: 'No encontrado' });
+});
+
+app.post('/api/files/save', (req, res) => {
+    const { serverId, path: filePath, content } = req.body;
+    if (filePath.includes('..')) return res.status(403).json({ error: 'Acceso denegado' });
+    const fullPath = path.join(__dirname, 'servers', serverId, filePath);
+    fs.writeFileSync(fullPath, content, 'utf8');
+    res.json({ success: true });
+});
+
+app.get('/api/server/playitlogs', async (req, res) => {
+    try {
+        const container = docker.getContainer(`playit-${req.query.serverId}`);
+        const logs = await container.logs({ stdout: true, stderr: true, tail: 50 });
+        res.json({ logs: logs.toString('utf8').replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/g, '') });
+    } catch (e) { res.json({ logs: "Esperando a Playit.gg..." }); }
+});
+
+// ==========================================
+// WEBSOCKETS (CONSOLA EN VIVO MC)
+// ==========================================
+io.on('connection', (socket) => {
+    const { serverId } = socket.handshake.query;
+    if (!serverId) return socket.disconnect();
+
+    const container = docker.getContainer(`mc-${serverId}`);
+    let logStream;
+
+    container.logs({ follow: true, stdout: true, stderr: true, tail: 50 }, (err, stream) => {
+        if (err || !stream) return;
+        logStream = stream;
+        stream.on('data', chunk => socket.emit('log', chunk.toString('utf8')));
+    });
+
+    socket.on('disconnect', () => { if (logStream) logStream.destroy(); });
+});
+
+server.listen(3000, () => console.log('Backend Professional Servers corriendo en puerto 3000'));
